@@ -12,43 +12,56 @@ const smoothstep = (start, end, value) => {
   return amount * amount * (3 - 2 * amount);
 };
 
-function getVisualProgress() {
-  const pageEnd = Math.max(
+let visualPageEnd = 1;
+let visualResearchEndScroll = 1;
+
+function updateVisualMetrics() {
+  visualPageEnd = Math.max(
     document.documentElement.scrollHeight - window.innerHeight,
     1,
   );
   const researchEnd = researchSection
     ? researchSection.offsetTop + researchSection.offsetHeight
-    : pageEnd * 0.5;
-  const researchEndScroll = clamp(
+    : visualPageEnd * 0.5;
+  visualResearchEndScroll = clamp(
     researchEnd - window.innerHeight,
     1,
-    Math.max(pageEnd - 1, 1),
-  );
-  const currentScroll = clamp(window.scrollY, 0, pageEnd);
-
-  // The wireframe is reached only as Research finishes entering the
-  // viewport. The junction vocabulary is reached only at the page end.
-  if (currentScroll <= researchEndScroll) {
-    return 0.5 * clamp(currentScroll / researchEndScroll);
-  }
-
-  return 0.5 + 0.5 * clamp(
-    (currentScroll - researchEndScroll) /
-      Math.max(pageEnd - researchEndScroll, 1),
+    Math.max(visualPageEnd - 1, 1),
   );
 }
 
-if (canvas) {
-  const context = canvas.getContext("2d", { alpha: true });
-  const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+function getVisualProgress() {
+  const currentScroll = clamp(window.scrollY, 0, visualPageEnd);
 
-  let width = window.innerWidth;
-  let height = window.innerHeight;
-  let pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+  // The wireframe is reached only as Research finishes entering the
+  // viewport. The junction vocabulary is reached only at the page end.
+  if (currentScroll <= visualResearchEndScroll) {
+    return 0.5 * clamp(currentScroll / visualResearchEndScroll);
+  }
+
+  return 0.5 + 0.5 * clamp(
+    (currentScroll - visualResearchEndScroll) /
+      Math.max(visualPageEnd - visualResearchEndScroll, 1),
+  );
+}
+
+updateVisualMetrics();
+
+if (canvas) {
+  const context = canvas.getContext("2d", {
+    alpha: true,
+    desynchronized: true,
+  });
+  const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const compactViewportQuery = window.matchMedia("(max-width: 760px)");
+
+  let width = 0;
+  let height = 0;
+  let pixelRatio = 1;
   let targetProgress = getVisualProgress();
   let displayedProgress = targetProgress;
   let frameRequest = null;
+  let resizeRequest = null;
 
   const goldenRatio = (1 + Math.sqrt(5)) / 2;
   const objectVertices = [
@@ -169,10 +182,31 @@ if (canvas) {
     ]),
   );
 
-  function resizeCanvas() {
-    width = window.innerWidth;
-    height = window.innerHeight;
-    pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+  function resizeCanvas(force = false) {
+    const nextWidth = window.innerWidth;
+    const nextHeight = window.innerHeight;
+    const isMobileToolbarResize =
+      !force &&
+      compactViewportQuery.matches &&
+      width > 0 &&
+      Math.abs(nextWidth - width) < 2 &&
+      Math.abs(nextHeight - height) < 140;
+
+    // Mobile address bars repeatedly change the viewport height while the
+    // user scrolls. Rebuilding the canvas for each small change causes jank.
+    if (isMobileToolbarResize) {
+      targetProgress = getVisualProgress();
+      requestRender();
+      return;
+    }
+
+    width = nextWidth;
+    height = nextHeight;
+    pixelRatio = Math.min(
+      window.devicePixelRatio || 1,
+      compactViewportQuery.matches ? 1.25 : 2,
+    );
+    updateVisualMetrics();
     targetProgress = getVisualProgress();
 
     canvas.width = Math.round(width * pixelRatio);
@@ -382,7 +416,11 @@ if (canvas) {
   }
 
   function renderFrame() {
-    const easing = reducedMotionQuery.matches ? 1 : 0.09;
+    const easing = reducedMotionQuery.matches
+      ? 1
+      : compactViewportQuery.matches
+        ? 0.17
+        : 0.09;
     displayedProgress += (targetProgress - displayedProgress) * easing;
 
     context.clearRect(0, 0, width, height);
@@ -408,10 +446,32 @@ if (canvas) {
     requestRender();
   }
 
-  window.addEventListener("scroll", handleScroll, { passive: true });
-  window.addEventListener("resize", resizeCanvas);
-  reducedMotionQuery.addEventListener?.("change", requestRender);
+  function handleResize() {
+    if (resizeRequest !== null) {
+      return;
+    }
 
-  resizeCanvas();
+    resizeRequest = window.requestAnimationFrame(() => {
+      resizeRequest = null;
+      resizeCanvas();
+    });
+  }
+
+  window.addEventListener("scroll", handleScroll, { passive: true });
+  window.addEventListener("resize", handleResize, { passive: true });
+  reducedMotionQuery.addEventListener?.("change", requestRender);
+  compactViewportQuery.addEventListener?.("change", () => resizeCanvas(true));
+
+  if ("ResizeObserver" in window) {
+    const layoutObserver = new ResizeObserver(() => {
+      updateVisualMetrics();
+      targetProgress = getVisualProgress();
+      requestRender();
+    });
+
+    layoutObserver.observe(document.body);
+  }
+
+  resizeCanvas(true);
   handleScroll();
 }

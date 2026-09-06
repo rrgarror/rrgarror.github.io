@@ -339,6 +339,17 @@ main,
   justify-self: end;
 }
 
+.portrait-credit {
+  margin: 0.6rem 0.1rem 0;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  letter-spacing: 0.025em;
+  line-height: 1.4;
+  text-align: right;
+  opacity: 0.8;
+}
+
 .portrait-frame {
   position: relative;
   aspect-ratio: 4 / 5;
@@ -717,27 +728,50 @@ main,
   }
 
   body {
-    font-size: 0.92rem;
+    font-size: 1rem;
+  }
+
+  .site-header.is-scrolled {
+    background: rgba(241, 238, 230, 0.96);
+    backdrop-filter: none;
+  }
+
+  .paper-texture {
+    opacity: 0.16;
+    mix-blend-mode: normal;
   }
 
   .hero {
     min-height: auto;
-    padding-top: calc(var(--header-height) + 2.5rem);
+    padding-top: calc(var(--header-height) + 3.25rem);
+    padding-bottom: 5rem;
     grid-template-columns: 1fr;
-    gap: 2.5rem;
+    gap: 3.25rem;
   }
 
   .hero h1 {
     font-size: clamp(3rem, 14vw, 5rem);
+    letter-spacing: -0.045em;
+    line-height: 0.98;
+  }
+
+  .hero h1 span:last-child {
+    margin-left: 0.35rem;
   }
 
   .hero-description {
-    margin-top: -0.75rem;
+    margin-top: 1.65rem;
+    font-size: 1rem;
+    line-height: 1.62;
+  }
+
+  .hero-description p + p {
+    margin-top: 1.15rem;
   }
 
   .portrait-composition {
-    width: min(88%, 25rem);
-    margin-top: -0.5rem;
+    width: min(100%, 23rem);
+    margin-top: 0;
     justify-self: center;
   }
 
@@ -974,6 +1008,33 @@ main,
 }
 
 @media (max-width: 560px) {
+  .header-inner {
+    gap: 0.7rem;
+  }
+
+  .header-marks {
+    gap: 0.45rem;
+  }
+
+  .site-mark {
+    width: 2.35rem;
+    height: 2.35rem;
+  }
+
+  .penrose-mark {
+    width: 1.45rem;
+    height: 1.45rem;
+  }
+
+  .header-philpeople-link {
+    height: 2.35rem;
+    padding-left: 0.5rem;
+  }
+
+  .header-philpeople-link img {
+    height: 1.85rem;
+  }
+
   .header-nav {
     gap: 0.65rem;
   }
@@ -981,5 +1042,6 @@ main,
   .header-nav a {
     font-size: 0.7rem;
     letter-spacing: 0;
+    white-space: nowrap;
   }
 }
