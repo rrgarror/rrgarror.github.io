@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <mask id="penrose-opening">
+      <rect width="64" height="64" fill="#fff"/>
+      <path d="M32 26.5 41 42H23Z" fill="#000"/>
+    </mask>
+  </defs>
+  <g mask="url(#penrose-opening)" stroke="#171a1b" stroke-opacity=".12" stroke-width="1" stroke-linejoin="round">
+    <path fill="#8a4737" d="M32 5 60 53H47L25.5 16Z"/>
+    <path fill="#171a1b" d="M60 53H5l6.5-11H53.5Z"/>
+    <path fill="#555b49" d="M5 53 32 5l6.5 11-21 37Z"/>
+    <path fill="#8a4737" d="M32 5 38.5 16 32 27 25.5 16Z"/>
+  </g>
+</svg>
